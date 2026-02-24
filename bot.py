@@ -1,5 +1,6 @@
 import ccxt
 import pandas as pd
+import numpy as np
 
 
 class Bot:
@@ -12,6 +13,43 @@ class Bot:
         return self.exchange
     def set_exchange(self, new_exchange_name: str):
         self.exchange_name = new_exchange_name
+
+    # расчет индикаторов ADX и %ATR
+    def calculate_indicators(self, df: pd.DataFrame, period=14):
+        
+        # Расчет True Range (TR)
+        df['h-l'] = df['high'] - df['low']
+        df['h-pc'] = abs(df['high'] - df['close'].shift(1))
+        df['l-pc'] = abs(df['low'] - df['close'].shift(1))
+        df['tr'] = df[['h-l', 'h-pc', 'l-pc']].max(axis=1)
+
+        # Направленное движение (DM)
+        df['up_move'] = df['high'] - df['high'].shift(1)
+        df['down_move'] = df['low'].shift(1) - df['low']
+        
+        df['+dm'] = np.where((df['up_move'] > df['down_move']) & (df['up_move'] > 0), df['up_move'], 0)
+        df['-dm'] = np.where((df['down_move'] > df['up_move']) & (df['down_move'] > 0), df['down_move'], 0)
+
+        # Сглаживание методом Уайлдера (через EWM)
+        alpha = 1 / period
+        df['tr_s'] = df['tr'].ewm(alpha=alpha, adjust=False).mean()
+        df['+dm_s'] = df['+dm'].ewm(alpha=alpha, adjust=False).mean()
+        df['-dm_s'] = df['-dm'].ewm(alpha=alpha, adjust=False).mean()
+
+        # Расчет +DI, -DI и DX
+        df['+di'] = 100 * (df['+dm_s'] / df['tr_s'])
+        df['-di'] = 100 * (df['-dm_s'] / df['tr_s'])
+        df['dx'] = 100 * (abs(df['+di'] - df['-di']) / (df['+di'] + df['-di']))
+
+        # Финальный ADX
+        df['adx'] = df['dx'].ewm(alpha=alpha, adjust=False).mean()
+        
+        # %ATR (Средняя волатильность в процентах от цены)
+        df['atr'] = df['tr'].rolling(window=period).mean()
+        df['pct_atr'] = (df['atr'] / df['close']) * 100
+
+        return df
+
 
     # поиск подходящих активов
     def get_suitable_symbols(self):
