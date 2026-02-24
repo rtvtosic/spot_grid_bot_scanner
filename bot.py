@@ -2,16 +2,22 @@ import ccxt
 
 
 class Bot:
-    def __init__(self, exchange: str):
+    exchange: str
+    fee: float
+    deposit: float
+
+    def __init__(self, exchange: str, fee: float = 0, deposit: float = 0):
         self.exchange = exchange
+        self.fee = fee
+        self.deposit = deposit
     
     def get_exchange(self):
         return self.exchange
     def set_exchange(self, new_exchange: str):
         self.exchange = new_exchange
 
-    # загрузка данных с биржи
-    def get_market_data(self):
+    # загрузка спотовых пар к USDT с биржи
+    def get_market_data(self) -> list[dict]:
         if self.exchange == 'bybit':
             exchange = ccxt.bybit()
         
@@ -28,5 +34,6 @@ if __name__ == "__main__":
 
     print(bot.get_exchange())
     
-    print(bot.get_market_data())
+    print(bot.get_market_data()[0])
+
 
