@@ -1,3 +1,7 @@
 # Spot_grid_bot_scanner
-This scanner searches symbols that are suitable for spot grid bot trading
+Сканер для поиска активов, подходящих для торговли с помощью спотового grid-бота
 
+## Методы класса Bot
+1) `set_exchange/get_exchange` - изменить/получить биржу, с которой будет загружаться информация об активах
+2) `set_fee/get_fee` - изменить/получить сумму коммиссии за сделку мейкера/тейкера
+3) `set_deposit/get_deposit` - изменить/получить сумму, на которой будет запущен бот
