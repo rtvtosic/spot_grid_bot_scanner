@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 
 
+MAX_ADX = 25
+MIN_ATR = 0.5
+MIN_VOLUME_24H = 5000000 
+
 class Bot:
     exchange = ccxt.bybit()
 
@@ -74,11 +78,16 @@ class Bot:
             ticker = self.exchange.fetch_ticker(symbol)
             volume_24h = ticker['quoteVolume']
             
-            
+            df = self.calculate_indicators(df)
+            last_row = df.iloc[-1]
+            adx_val = last_row['adx']
+            pct_atr = last_row['pct_atr']
+            current_price = last_row['close']
 
-
-            print(df.head())
-            break
+            if adx_val < MAX_ADX and pct_atr > MIN_ATR and volume_24h >= MIN_VOLUME_24H:
+                print(f"[SUCCESS] АКТИВ НАЙДЕН: {symbol}")
+            else:
+                print(f"[FAIL] АКТИВ {symbol} НЕ ПОДХОДИТ")
     
 
 
