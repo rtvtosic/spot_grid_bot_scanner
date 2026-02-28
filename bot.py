@@ -5,7 +5,7 @@ import numpy as np
 
 MAX_ADX = 25
 MIN_ATR = 0.5
-MIN_VOLUME_24H = 5000000 
+MIN_VOLUME_24H = 5_000_000 
 
 class Bot:
     exchange = ccxt.bybit()
