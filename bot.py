@@ -4,9 +4,14 @@ import numpy as np
 
 from bcolors import bcolors
 
+
 MAX_ADX = 25
-MIN_ATR = 0.5
+MIN_VOLATILITY = 0.3
 MIN_VOLUME_24H = 5_000_000 
+MIN_NET_PROFIT = 0.5    # Мы хотим минимум 0.5% чистой прибыли на сделку
+EXCHANGE_FEE = 0.2      # Суммарная комиссия Bybit (0.1% * 2)
+BUDGET = 50
+
 
 class Bot:
     exchange = ccxt.bybit()
@@ -58,8 +63,7 @@ class Bot:
 
     # поиск подходящих активов
     def get_suitable_symbols(self):
-        # if self.exchange_name == 'bybit':
-        #     exchange = ccxt.bybit()
+        suitable_symbols = [] # список подходящих активов
         
         # запрос данных с биржи
         markets = self.exchange.fetch_markets()
@@ -69,8 +73,8 @@ class Bot:
         # загрузка свечей опр. пары
         for symbol in symbols:
             ohlcv = self.exchange.fetch_ohlcv(symbol=symbol,
-                                              timeframe='1m',
-                                              limit=100)
+                                              timeframe='5m',
+                                              limit=300)
             df = pd.DataFrame(data=ohlcv,
                               columns=['timestamp', 'open', 'high',
                                         'low', 'close', 'volume'])
@@ -85,12 +89,41 @@ class Bot:
             pct_atr = last_row['pct_atr']
             current_price = last_row['close']
 
-            if  (adx_val < MAX_ADX and volume_24h >= MIN_VOLUME_24H):
-                print(bcolors.OKGREEN + "[SUCCESS] " + bcolors.ENDC + f" АКТИВ НАЙДЕН: {symbol}")
+            if  (adx_val < MAX_ADX and pct_atr >= MIN_VOLATILITY and volume_24h >= MIN_VOLUME_24H):
+                print(bcolors.OKGREEN + "[SUCCESS] " + bcolors.ENDC + f" АКТИВ НАЙДЕН: {symbol}  %ATR: {pct_atr} НЕОБХОДИМО: {MIN_VOLATILITY}")
 
+                # расчет диапазона
+                range_width_pct = pct_atr * 3
+                lower_p = current_price * (1 - range_width_pct / 200)
+                upper_p = current_price * (1 + range_width_pct / 200)
+
+                target_gross_profit = MIN_NET_PROFIT + EXCHANGE_FEE
+
+                # Кол-во сеток = Общая ширина / Целевая прибыль на одну
+                calculated_grids = int(range_width_pct / target_gross_profit)
+
+                # Ограничение по бюджету (минимум 2 USDT на сетку для стабильности на Bybit)
+                max_grids_by_budget = int(BUDGET / 2)
+                final_grids = min(calculated_grids, max_grids_by_budget)
+
+                if final_grids < 10:
+                    continue
+
+                grid_interval = (upper_p - lower_p) / final_grids
+                actual_net_profit = (range_width_pct / final_grids) - EXCHANGE_FEE
+
+                suitable_symbols.append({
+                    'Symbol': symbol,
+                    'Price': current_price,
+                    'Range': f"{round(lower_p, 4)} - {round(upper_p, 4)}",
+                    'Interval': round(grid_interval, 5),
+                    'Profit': f"{round(actual_net_profit, 2)}%",
+                })
                 
             else:
                 print(bcolors.FAIL +"[FAIL] " + bcolors.ENDC + f"АКТИВ {symbol} НЕ ПОДХОДИТ")
+            
+        return suitable_symbols
     
 
 if __name__ == "__main__":
@@ -98,6 +131,16 @@ if __name__ == "__main__":
 
     print(bot.get_exchange())
     
-    print(bot.get_suitable_symbols())
+    suitable_symbols = bot.get_suitable_symbols()
+
+    print(len(suitable_symbols))
+    print("===== ПОДХОДЯЩИЕ АКТИВЫ =====")
+    for symbol in suitable_symbols:
+        print(f"Актив: {symbol['Symbol']}")
+        print(f"Цена: {symbol['Price']}")
+        print(f"Ценовой диапазон: {symbol['Range']}")
+        print(f"Интервал: {symbol['Interval']}")
+        print(f"Профит: {symbol['Profit']}")
+        print()
 
 
