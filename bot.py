@@ -127,20 +127,32 @@ class Bot:
     
 
 if __name__ == "__main__":
+    print(bcolors.OKBLUE + "======= КОНФИГУРАЦИЯ =======" + bcolors.ENDC)
+    print(f"Макс. значение ADX: {bcolors.OKBLUE}{MAX_ADX}{bcolors.ENDC}")
+    print(f"Мин. волатильность: {bcolors.OKBLUE}{MIN_VOLATILITY}{bcolors.ENDC}")
+    print(f"Мин. торговый обьем (24ч): {bcolors.OKBLUE}{MIN_VOLUME_24H}{bcolors.ENDC}")
+    print("------------")
+    print(f"Депозит: {bcolors.OKBLUE}{BUDGET}{bcolors.ENDC}")
+    print(f"Суммарная комиссия (taker + maker): {bcolors.OKBLUE}{EXCHANGE_FEE}{bcolors.ENDC}")
+    print(f"Мин. чистая прибыль на сетку: {bcolors.OKBLUE}{MIN_NET_PROFIT}{bcolors.ENDC}")
+    print(bcolors.OKBLUE + "============================" + bcolors.ENDC)
+
+
     bot = Bot('bybit')
+    try:
+        suitable_symbols = bot.get_suitable_symbols()
 
-    print(bot.get_exchange())
-    
-    suitable_symbols = bot.get_suitable_symbols()
+        print(len(suitable_symbols))
+        print("===== ПОДХОДЯЩИЕ АКТИВЫ =====")
+        for symbol in suitable_symbols:
+            print(f"Актив: {symbol['Symbol']}")
+            print(f"Цена: {symbol['Price']}")
+            print(f"Ценовой диапазон: {symbol['Range']}")
+            print(f"Интервал: {symbol['Interval']}")
+            print(f"Профит: {symbol['Profit']}")
+            print()
 
-    print(len(suitable_symbols))
-    print("===== ПОДХОДЯЩИЕ АКТИВЫ =====")
-    for symbol in suitable_symbols:
-        print(f"Актив: {symbol['Symbol']}")
-        print(f"Цена: {symbol['Price']}")
-        print(f"Ценовой диапазон: {symbol['Range']}")
-        print(f"Интервал: {symbol['Interval']}")
-        print(f"Профит: {symbol['Profit']}")
-        print()
+    except KeyboardInterrupt:
+        print(f"{bcolors.OKCYAN}[STOP]{bcolors.ENDC} Программа остановлена.")
 
 
