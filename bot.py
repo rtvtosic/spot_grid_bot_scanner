@@ -84,8 +84,10 @@ class Bot:
             pct_atr = last_row['pct_atr']
             current_price = last_row['close']
 
-            if adx_val < MAX_ADX and pct_atr > MIN_ATR and volume_24h >= MIN_VOLUME_24H:
+            if  (adx_val < MAX_ADX and volume_24h >= MIN_VOLUME_24H):
                 print(f"[SUCCESS] АКТИВ НАЙДЕН: {symbol}")
+
+                
             else:
                 print(f"[FAIL] АКТИВ {symbol} НЕ ПОДХОДИТ")
     
