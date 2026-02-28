@@ -2,6 +2,7 @@ import ccxt
 import pandas as pd
 import numpy as np
 
+from bcolors import bcolors
 
 MAX_ADX = 25
 MIN_ATR = 0.5
@@ -85,14 +86,12 @@ class Bot:
             current_price = last_row['close']
 
             if  (adx_val < MAX_ADX and volume_24h >= MIN_VOLUME_24H):
-                print(f"[SUCCESS] АКТИВ НАЙДЕН: {symbol}")
+                print(bcolors.OKGREEN + "[SUCCESS] " + bcolors.ENDC + f" АКТИВ НАЙДЕН: {symbol}")
 
                 
             else:
-                print(f"[FAIL] АКТИВ {symbol} НЕ ПОДХОДИТ")
+                print(bcolors.FAIL +"[FAIL] " + bcolors.ENDC + f"АКТИВ {symbol} НЕ ПОДХОДИТ")
     
-
-
 
 if __name__ == "__main__":
     bot = Bot('bybit')
