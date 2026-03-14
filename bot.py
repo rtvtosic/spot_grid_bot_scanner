@@ -12,6 +12,7 @@ MIN_VOLUME_24H = 5_000_000
 MIN_NET_PROFIT = 0.5    # Мы хотим минимум 0.5% чистой прибыли на сделку
 EXCHANGE_FEE = 0.2      # Суммарная комиссия Bybit (0.1% * 2)
 BUDGET = 50
+TIMEFRAME = '15m'
 
 
 class Bot:
@@ -72,9 +73,9 @@ class Bot:
         symbols = [m['symbol'] for m in markets if m['spot'] and m['quote'] == 'USDT']
         
         # загрузка свечей опр. пары
-        for symbol in symbols[:10]:
+        for symbol in symbols:
             ohlcv = self.exchange.fetch_ohlcv(symbol=symbol,
-                                              timeframe='5m',
+                                              timeframe=TIMEFRAME,
                                               limit=300)
             df = pd.DataFrame(data=ohlcv,
                               columns=['timestamp', 'open', 'high',
@@ -105,7 +106,10 @@ class Bot:
             final_grids = min(calculated_grids, max_grids_by_budget)
 
 
-            if  (adx_val < MAX_ADX and pct_atr >= MIN_VOLATILITY and volume_24h >= MIN_VOLUME_24H and final_grids >= 10):
+            if  (adx_val < MAX_ADX and 
+                 pct_atr >= MIN_VOLATILITY and 
+                 volume_24h >= MIN_VOLUME_24H and 
+                 final_grids >= 10):
                 print(bcolors.OKGREEN + "[SUCCESS] " + bcolors.ENDC + f" АКТИВ НАЙДЕН: {symbol}")
 
                 grid_interval = (upper_p - lower_p) / final_grids
@@ -131,35 +135,36 @@ if __name__ == "__main__":
     print(f"Мин. волатильность: {bcolors.OKBLUE}{MIN_VOLATILITY}{bcolors.ENDC}")
     print(f"Мин. торговый обьем (24ч): {bcolors.OKBLUE}{MIN_VOLUME_24H}{bcolors.ENDC}")
     print("------------")
-    print(f"Депозит: {bcolors.OKBLUE}{BUDGET}{bcolors.ENDC}")
+    print(f"Таймфрейм для замера индикаторов: {bcolors.OKBLUE}{TIMEFRAME}{bcolors.ENDC}")
+    print(f"Депозит: {bcolors.OKBLUE}{BUDGET}${bcolors.ENDC}")
     print(f"Суммарная комиссия (taker + maker): {bcolors.OKBLUE}{EXCHANGE_FEE}{bcolors.ENDC}")
     print(f"Мин. чистая прибыль на сетку: {bcolors.OKBLUE}{MIN_NET_PROFIT}{bcolors.ENDC}")
     print(bcolors.OKBLUE + "============================" + bcolors.ENDC)
+    print("Начать поиск? (y/n): ")
+    ans = input()
+    
+    if ans == 'y':
+        bot = Bot('bybit')
+        try:
+            start = time.time()
+            suitable_symbols = bot.get_suitable_symbols()
+            stop = time.time()
 
+            working_time = (stop - start) * 1000
 
-    bot = Bot('bybit')
-    try:
-        start = time.time()
-        suitable_symbols = bot.get_suitable_symbols()
-        stop = time.time()
+            if len(suitable_symbols):
+                print("===== ПОДХОДЯЩИЕ АКТИВЫ =====")
+                for symbol in suitable_symbols:
+                    print(f"Актив: {symbol['Symbol']}")
+                    print(f"Цена: {symbol['Price']}")
+                    print(f"Ценовой диапазон: {symbol['Range']}")
+                    print(f"Интервал: {symbol['Interval']}")
+                    print(f"Профит: {symbol['Profit']}")
+                    print()
+            else:
+                print("Подходящих активов не найдено(") 
+            
+            print(f"Время выполнения: {working_time:.2f} мс")
 
-        working_time = (stop - start) * 1000
-
-        if len(suitable_symbols):
-            print("===== ПОДХОДЯЩИЕ АКТИВЫ =====")
-            for symbol in suitable_symbols:
-                print(f"Актив: {symbol['Symbol']}")
-                print(f"Цена: {symbol['Price']}")
-                print(f"Ценовой диапазон: {symbol['Range']}")
-                print(f"Интервал: {symbol['Interval']}")
-                print(f"Профит: {symbol['Profit']}")
-                print()
-        else:
-            print("Подходящих активов не найдено(") 
-        
-        print(f"Время выполнения: {working_time:.2f} мс")
-
-    except KeyboardInterrupt:
-        print(f"{bcolors.OKCYAN}[STOP]{bcolors.ENDC} Программа остановлена.")
-
-
+        except KeyboardInterrupt:
+            print(f"{bcolors.OKCYAN}[STOP]{bcolors.ENDC} Программа остановлена.")
